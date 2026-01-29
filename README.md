@@ -27,6 +27,8 @@ git checkout -b feature/my-feature
 ```
 Use a descriptive branch name like fix/button-color or feature/dark-mode.
 
+---
+
 ### 3. Make Your Changes
 * Add features, fix bugs, or improve documentation.
 
@@ -39,12 +41,16 @@ git add .
 git commit -m "Add dark mode toggle"
 ```
 
+---
+
 ### 4. Push Your Branch to Your Fork
 
 Push the branch with your changes to your fork:
 ```bash
 git push origin feature/my-feature
 ```
+
+---
 
 ### 5. Open a Pull Request (PR)
 
@@ -66,6 +72,8 @@ git push origin feature/my-feature
 
 5. Small contributions are absolutely welcome! Even tiny fixes or minor UI improvements help the project.
 
+---
+
 ### 6. PR Review
 
 * Maintainers will review your PR.
@@ -75,6 +83,8 @@ git push origin feature/my-feature
 * Push updates to the same branch; your PR will automatically update.
 
 * Once approved, your PR will be merged into main.
+
+---
 
 ### 7. Stay in Sync
 
@@ -86,6 +96,8 @@ git merge upstream/main
 ```
 Replace upstream with the remote pointing to the original repository.
 
+---
+
 ### 8. Optional: Opening Issues First
 
 For larger changes or new features, it’s helpful to open an issue first:
@@ -95,6 +107,8 @@ For larger changes or new features, it’s helpful to open an issue first:
 3. Reference the issue in your PR (e.g., `Closes #10`).
 
 > This keeps the project organized and prevents duplicate effort.
+
+---
 
 ## Notes
 
