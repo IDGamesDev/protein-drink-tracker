@@ -4,7 +4,15 @@ Welcome to **ProteinTracker PWA**! 🥤
 
 This is a simple Progressive Web App to track your daily protein drink intake.  
 This project is **open-source** and primarily for **educational purposes**, so small features, bug fixes, and improvements are all welcome.
+Below is a description of steps to follow to contribute to this project.
 
+Additionally, here are some YouTube videos that walk through contributing to opensource projects!
+
+* https://www.youtube.com/watch?v=dLRA1lffWBw
+
+* https://www.youtube.com/watch?v=CML6vfKjQss
+
+**DON'T BE AFRAID TO FORK YOUR OWN REPO AND PLAY AROUND WITH THE CODE, ADD NEW FEATURES, TEST THINGS OUT!**
 ---
 
 ## Contributing Guide
