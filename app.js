@@ -4,12 +4,14 @@
   const STORAGE_KEY = 'proteinDrinkTracker';
   const LANG_KEY = 'proteinTrackerLang';
   const RESET_HOUR = 2; // 2am local
+  const HISTORY_MAX_DAYS = 365;
 
   // 1. translation dictionary
   const translations = {
     en: {
       title: "Protein Drink Tracker",
       btnDrank: "I drank my protein",
+      btnDrankUndo: "Undo",
       statusDone: "Protein done for today.",
       statusNotDone: "Not yet today."
       // TODO: add alt texts transaltions for images
@@ -47,24 +49,37 @@
     return y + '-' + m + '-' + d;
   }
 
+  function parseDateKey(key) {
+    const [y, m, d] = key.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  function formatDisplayDate(dateKey) {
+    const d = parseDateKey(dateKey);
+    return d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+  }
+
   function loadState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return { dateKey: null, drank: false };
+      if (!raw) return { dateKey: null, drank: false, history: [] };
       const data = JSON.parse(raw);
+      const history = Array.isArray(data.history) ? data.history : [];
       return {
         dateKey: data.dateKey || null,
-        drank: Boolean(data.drank)
+        drank: Boolean(data.drank),
+        history: history
       };
     } catch (_) {
-      return { dateKey: null, drank: false };
+      return { dateKey: null, drank: false, history: [] };
     }
   }
 
-  function saveState(dateKey, drank) {
+  function saveState(dateKey, drank, history) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ dateKey, drank }));
-    } catch (_) { }
+      const trimmed = (history || []).slice(-HISTORY_MAX_DAYS);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ dateKey, drank, history: trimmed }));
+    } catch (_) {}
   }
 
   function getCurrentDrank() {
@@ -76,9 +91,49 @@
     return stored.drank;
   }
 
+  function getHistory() {
+    const dateKey = getDateKey();
+    const stored = loadState();
+    let history = stored.history || [];
+    if (stored.dateKey === dateKey && stored.drank && !history.includes(dateKey)) {
+      history = history.concat([dateKey]);
+      saveState(dateKey, true, history);
+    } else if (stored.dateKey === dateKey && !stored.drank) {
+      history = history.filter(function (k) { return k !== dateKey; });
+    }
+    return history;
+  }
+
   function setDrank(drank) {
     const dateKey = getDateKey();
-    saveState(dateKey, drank);
+    const stored = loadState();
+    let history = stored.history || [];
+    if (drank) {
+      if (!history.includes(dateKey)) history = history.concat([dateKey]);
+    } else {
+      history = history.filter(function (k) { return k !== dateKey; });
+    }
+    saveState(dateKey, drank, history);
+  }
+
+  function getStreak() {
+    const todayKey = getDateKey();
+    const history = getHistory();
+    const drankSet = new Set(history);
+    if (!drankSet.has(todayKey)) return 0;
+    let streak = 0;
+    const today = parseDateKey(todayKey);
+    let d = new Date(today);
+    while (true) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const key = y + '-' + m + '-' + day;
+      if (!drankSet.has(key)) break;
+      streak++;
+      d.setDate(d.getDate() - 1);
+    }
+    return streak;
   }
 
   function toggleDrank() {
@@ -88,11 +143,14 @@
   }
 
   function updateUI(drank) {
+    const dateKey = getDateKey();
     const flexed = document.getElementById('arm-flexed');
     const weak = document.getElementById('arm-weak');
     const btn = document.getElementById('toggle-btn');
     const status = document.getElementById('status-text');
     const title = document.getElementById('app-title');
+    const dateEl = document.getElementById('date-text');
+    const streakEl = document.getElementById('streak-text');
 
     const texts = translations[currentLang];
 
@@ -101,10 +159,19 @@
     if (weak) weak.classList.toggle('hidden', drank);
     if (btn) {
       btn.setAttribute('aria-pressed', drank ? 'true' : 'false');
-      btn.textContent = texts.btnDrank;
+      btn.textContent = drank ? texts.btnDrankUndo; : texts.btnDrank;
     }
     if (status) {
       status.textContent = drank ? texts.statusDone : texts.statusNotDone;
+    }
+    if (dateEl) {
+      dateEl.textContent = formatDisplayDate(dateKey);
+    }
+    if (streakEl) {
+      const streak = getStreak();
+      streakEl.textContent = streak > 0
+        ? (streak === 1 ? '1 day streak!' : streak + ' day streak!')
+        : '';
     }
   }
 
@@ -132,6 +199,12 @@
     const btn = document.getElementById('toggle-btn');
     if (btn) {
       btn.addEventListener('click', handleToggle);
+      btn.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleToggle();
+        }
+      });
     }
 
     // Optional: re-check dateKey periodically while app is open (e.g. across midnight)

@@ -29,7 +29,14 @@ body {
   letter-spacing: 0.02em;
 }
 
-/* Graphic container: one visible image at a time asdf*/
+/* Date display */
+.date-text {
+  margin: 0;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Graphic container */
 .graphic-container {
   position: relative;
   width: min(280px, 75vw);
@@ -47,8 +54,14 @@ body {
   height: 100%;
   object-fit: cover;
   transform-origin: center center;
-  transition: opacity 0.25s ease;
+  transition: opacity 0.3s ease;
   background: #2a2a4a;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .graphic-img {
+    transition: none;
+  }
 }
 
 .graphic-img.hidden {
@@ -60,6 +73,15 @@ body {
 .status {
   margin: 0;
   font-size: 1rem;
+  min-height: 1.5em;
+}
+
+/* Streak text */
+.streak-text {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2ecc71;
   min-height: 1.5em;
 }
 
@@ -107,4 +129,11 @@ body {
 .toggle-btn:focus-visible {
   outline: 2px solid rgba(255, 255, 255, 0.8);
   outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toggle-btn:hover,
+  .toggle-btn:active {
+    transform: none;
+  }
 }
