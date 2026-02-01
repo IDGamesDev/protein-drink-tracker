@@ -9,12 +9,19 @@
   <link rel="icon" href="icons/icon2.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
   <link rel="manifest" href="manifest.json">
+  <script>
+    (function () {
+      const saved = localStorage.getItem('proteinTheme');
+      const theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
 </head>
 
 <body>
   <header class="app-header">
     <div class="header-left">
-      <h1 class="logo-text">Protein Tracker</h1>
+      <h1 class="logo-text">Protein Drink Tracker</h1>
     </div>
 
     <div class="header-center">
@@ -25,6 +32,12 @@
     </div>
 
     <div class="header-right">
+      <div class="language-picker" style="margin-right: 1rem;">
+        <select id="lang-select" aria-label="Select Language">
+          <option value="en">🇺🇸 EN</option>
+          <option value="fr">🇫🇷 FR</option>
+        </select>
+      </div>
       <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Dark/Light Mode" title="Toggle Theme">
         🌙
       </button>
@@ -47,6 +60,8 @@
     <button type="button" id="toggle-btn" class="toggle-btn" aria-pressed="false">
       I drank my protein
     </button>
+
+    <p id="last-time" class="last-time" style="font-size: 0.9rem; color: var(--text-muted); min-height: 1.2em;"></p>
 
     <div id="world-clocks" class="world-clocks footer-clocks" aria-label="World Times">
       <!-- Populated by JS -->

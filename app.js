@@ -3,6 +3,7 @@
 
   const STORAGE_KEY = 'proteinDrinkTracker';
   const THEME_KEY = 'proteinTheme';
+  const LANG_KEY = 'proteinTrackerLang';
   const RESET_HOUR = 2; // 2am local
   const HISTORY_MAX_DAYS = 365;
 
@@ -15,6 +16,27 @@
 
   /* --- Location Variables --- */
   let userLocation = { city: 'Local Time', timeZone: undefined };
+
+  // 1. translation dictionary
+  const translations = {
+    en: {
+      title: "Protein Drink Tracker",
+      btnDrank: "I drank my protein",
+      btnDrankUndo: "Undo",
+      statusDone: "Protein done for today.",
+      statusNotDone: "Not yet today."
+    },
+    fr: {
+      title: "Suivi de Protéines",
+      btnDrank: "J'ai bu ma protéine",
+      btnDrankUndo: "Annuler",
+      statusDone: "Protéine prise aujourd'hui.",
+      statusNotDone: "Pas encore aujourd'hui."
+    }
+  };
+
+  // Get preferred language (default: en)
+  let currentLang = localStorage.getItem(LANG_KEY) || 'en';
 
   /**
    * App "day" = from 2:00 AM to 1:59 AM next calendar day (local).
@@ -46,23 +68,25 @@
   function loadState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return { dateKey: null, drank: false, history: [] };
+      if (!raw) return { dateKey: null, drank: false, drinkTimestamps: [], history: [] };
       const data = JSON.parse(raw);
       const history = Array.isArray(data.history) ? data.history : [];
+      const drinkTimestamps = Array.isArray(data.drinkTimestamps) ? data.drinkTimestamps : [];
       return {
         dateKey: data.dateKey || null,
         drank: Boolean(data.drank),
+        drinkTimestamps: drinkTimestamps,
         history: history
       };
     } catch (_) {
-      return { dateKey: null, drank: false, history: [] };
+      return { dateKey: null, drank: false, drinkTimestamps: [], history: [] };
     }
   }
 
-  function saveState(dateKey, drank, history) {
+  function saveState(dateKey, drank, history, drinkTimestamps) {
     try {
       const trimmed = (history || []).slice(-HISTORY_MAX_DAYS);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ dateKey, drank, history: trimmed }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ dateKey, drank, drinkTimestamps, history: trimmed }));
     } catch (_) { }
   }
 
@@ -81,7 +105,7 @@
     let history = stored.history || [];
     if (stored.dateKey === dateKey && stored.drank && !history.includes(dateKey)) {
       history = history.concat([dateKey]);
-      saveState(dateKey, true, history);
+      saveState(dateKey, true, history, stored.drinkTimestamps);
     } else if (stored.dateKey === dateKey && !stored.drank) {
       history = history.filter(function (k) { return k !== dateKey; });
     }
@@ -92,12 +116,18 @@
     const dateKey = getDateKey();
     const stored = loadState();
     let history = stored.history || [];
+    let drinkTimestamps = stored.drinkTimestamps || [];
+
     if (drank) {
       if (!history.includes(dateKey)) history = history.concat([dateKey]);
+      drinkTimestamps = drinkTimestamps.filter(function (ts) { return ts.date !== dateKey; });
+      drinkTimestamps = drinkTimestamps.concat([{ date: dateKey, time: new Date().toLocaleTimeString() }]);
     } else {
       history = history.filter(function (k) { return k !== dateKey; });
+      drinkTimestamps = drinkTimestamps.filter(function (ts) { return ts.date !== dateKey; });
     }
-    saveState(dateKey, drank, history);
+
+    saveState(dateKey, drank, history, drinkTimestamps);
   }
 
   function getStreak() {
@@ -148,7 +178,6 @@
       navigator.geolocation.getCurrentPosition(async (pos) => {
         const { latitude, longitude } = pos.coords;
         userLocation.city = await fetchCityName(latitude, longitude);
-        // We can trust the browser's Intl timezone, but having the city name confirm's "My Location"
         const el = document.getElementById('main-clock-label');
         if (el) el.textContent = 'Time in ' + userLocation.city;
       }, (err) => {
@@ -178,7 +207,6 @@
       container.innerHTML = html;
     }
   }
-
 
   function updateClock() {
     const now = new Date();
@@ -238,21 +266,27 @@
   /* --- UI Functions --- */
   function updateUI(drank) {
     const dateKey = getDateKey();
+    const stored = loadState();
     const flexed = document.getElementById('arm-flexed');
     const weak = document.getElementById('arm-weak');
     const btn = document.getElementById('toggle-btn');
     const status = document.getElementById('status-text');
+    const title = document.querySelector('.logo-text'); // Targeted class selector
     const dateEl = document.getElementById('date-text');
     const streakEl = document.getElementById('streak-text');
+    const lastTimeEl = document.getElementById('last-time');
 
+    const texts = translations[currentLang];
+
+    if (title) title.textContent = texts.title;
     if (flexed) flexed.classList.toggle('hidden', !drank);
     if (weak) weak.classList.toggle('hidden', drank);
     if (btn) {
       btn.setAttribute('aria-pressed', drank ? 'true' : 'false');
-      btn.textContent = drank ? 'Undo' : 'I drank my protein';
+      btn.textContent = drank ? texts.btnDrankUndo : texts.btnDrank;
     }
     if (status) {
-      status.textContent = drank ? 'Protein done for today.' : 'Not yet today.';
+      status.textContent = drank ? texts.statusDone : texts.statusNotDone;
     }
     if (dateEl) {
       dateEl.textContent = formatDisplayDate(dateKey);
@@ -262,6 +296,18 @@
       streakEl.textContent = streak > 0
         ? (streak === 1 ? '1 day streak!' : streak + ' day streak!')
         : '';
+    }
+    if (lastTimeEl) {
+      const timestamps = stored.drinkTimestamps || [];
+      if (timestamps.length > 0) {
+        const recent = timestamps.slice().sort(function (a, b) { return b.date.localeCompare(a.date); })[0];
+        const isToday = recent.date === dateKey;
+        lastTimeEl.textContent = isToday
+          ? `Last drank at: ${recent.time}`
+          : `Last drank: ${formatDisplayDate(recent.date)} at ${recent.time}`;
+      } else {
+        lastTimeEl.textContent = '';
+      }
     }
   }
 
@@ -276,6 +322,17 @@
   function init() {
     // PROTEIN TRACKER INIT
     const drank = getCurrentDrank();
+
+    const langSelect = document.getElementById('lang-select');
+    if (langSelect) {
+      langSelect.value = currentLang;
+      langSelect.addEventListener('change', (e) => {
+        currentLang = e.target.value;
+        localStorage.setItem(LANG_KEY, currentLang);
+        updateUI(getCurrentDrank());
+      });
+    }
+
     updateUI(drank);
 
     const btn = document.getElementById('toggle-btn');

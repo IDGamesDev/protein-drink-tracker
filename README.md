@@ -4,7 +4,7 @@ Welcome to **ProteinTracker PWA**! 🥤
 
 Link to live app: [protein-shake-tracker.netlify.app](https://protein-shake-tracker.netlify.app/)
 
-You can get this app onto your phone for free by specific "add to home" options on your mobile browser.
+You can get this app onto your phone for free by selecting the "Add to Home" option on your mobile browser.
 
 This is a simple Progressive Web App to track your daily protein drink intake.  
 This project is **open-source** and primarily for **educational purposes**, so small features, bug fixes, and improvements are all welcome.
