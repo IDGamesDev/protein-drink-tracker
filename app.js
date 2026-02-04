@@ -4,6 +4,7 @@
   const STORAGE_KEY = 'proteinDrinkTracker';
   const THEME_KEY = 'proteinTheme';
   const LANG_KEY = 'proteinTrackerLang';
+  const REMINDER_KEY = 'proteinReminder';
   const RESET_HOUR = 2; // 2am local
   const HISTORY_MAX_DAYS = 365;
 
@@ -86,7 +87,10 @@
   function saveState(dateKey, drank, history, drinkTimestamps) {
     try {
       const trimmed = (history || []).slice(-HISTORY_MAX_DAYS);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ dateKey, drank, drinkTimestamps, history: trimmed }));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ dateKey, drank, drinkTimestamps, history: trimmed })
+      );
     } catch (_) { }
   }
 
@@ -156,16 +160,41 @@
     return next;
   }
 
+  /* 🔔 Notification reminder initialization */
+  function initReminder() {
+    if (!localStorage.getItem(REMINDER_KEY)) {
+      localStorage.setItem(REMINDER_KEY, JSON.stringify({
+        enabled: true,
+        time: '09:00',
+        lastNotified: null
+      }));
+    }
+
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(function(permission) {
+        if (permission === 'granted' && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({
+            type: 'SET_REMINDER',
+            settings: JSON.parse(localStorage.getItem(REMINDER_KEY))
+          });
+        }
+      });
+    } else if ('Notification' in window && Notification.permission === 'granted' && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'SET_REMINDER',
+        settings: JSON.parse(localStorage.getItem(REMINDER_KEY))
+      });
+    }
+  }
+
   /* --- Location Functions --- */
   async function fetchCityName(lat, lon) {
     try {
-      // Using BigDataCloud's free reverse geocoding API (client-side capable)
-      const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
+      const res = await fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
+      );
       if (!res.ok) throw new Error('HTTP Error ' + res.status);
-
       const data = await res.json();
-      if (!data || typeof data !== 'object') throw new Error('Invalid response data');
-
       return data.city || data.locality || 'Location Found';
     } catch (e) {
       console.error('City fetch failed', e);
@@ -180,14 +209,10 @@
         userLocation.city = await fetchCityName(latitude, longitude);
         const el = document.getElementById('main-clock-label');
         if (el) el.textContent = 'Time in ' + userLocation.city;
-      }, (err) => {
-        console.warn('Geolocation denied or failed', err);
+      }, () => {
         const el = document.getElementById('main-clock-label');
         if (el) el.textContent = 'Local Time';
       });
-    } else {
-      const el = document.getElementById('main-clock-label');
-      if (el) el.textContent = 'Local Time';
     }
   }
 
@@ -210,31 +235,23 @@
 
   function updateClock() {
     const now = new Date();
-
-    // Main Clock (Local)
     const timeEl = document.getElementById('clock-time');
     const secEl = document.getElementById('clock-seconds');
 
     if (timeEl && secEl) {
-      const h = String(now.getHours()).padStart(2, '0');
-      const m = String(now.getMinutes()).padStart(2, '0');
-      const s = String(now.getSeconds()).padStart(2, '0');
-
-      timeEl.textContent = `${h}:${m}`;
-      secEl.textContent = s;
+      timeEl.textContent = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      secEl.textContent = String(now.getSeconds()).padStart(2, '0');
     }
 
-    // World Clocks
     WORLD_CITIES.forEach((city, index) => {
       const el = document.getElementById(`world-clock-time-${index}`);
       if (el) {
-        const timeStr = now.toLocaleTimeString('en-US', {
+        el.textContent = now.toLocaleTimeString('en-US', {
           timeZone: city.timeZone,
           hour: '2-digit',
           minute: '2-digit',
           hour12: false
         });
-        el.textContent = timeStr;
       }
     });
   }
@@ -249,18 +266,12 @@
   function setTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem(THEME_KEY, theme);
-
     const btn = document.getElementById('theme-toggle');
-    if (btn) {
-      btn.textContent = theme === 'light' ? '☀️' : '🌙';
-      btn.setAttribute('aria-label', theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode');
-    }
+    if (btn) btn.textContent = theme === 'light' ? '☀️' : '🌙';
   }
 
   function toggleTheme() {
-    const current = document.documentElement.getAttribute('data-theme') || 'dark';
-    const next = current === 'dark' ? 'light' : 'dark';
-    setTheme(next);
+    setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
   }
 
   /* --- UI Functions --- */
@@ -271,40 +282,29 @@
     const weak = document.getElementById('arm-weak');
     const btn = document.getElementById('toggle-btn');
     const status = document.getElementById('status-text');
-    const title = document.querySelector('.logo-text'); // Targeted class selector
+    const title = document.querySelector('.logo-text');
     const dateEl = document.getElementById('date-text');
     const streakEl = document.getElementById('streak-text');
     const lastTimeEl = document.getElementById('last-time');
-
     const texts = translations[currentLang];
 
     if (title) title.textContent = texts.title;
     if (flexed) flexed.classList.toggle('hidden', !drank);
     if (weak) weak.classList.toggle('hidden', drank);
-    if (btn) {
-      btn.setAttribute('aria-pressed', drank ? 'true' : 'false');
-      btn.textContent = drank ? texts.btnDrankUndo : texts.btnDrank;
-    }
-    if (status) {
-      status.textContent = drank ? texts.statusDone : texts.statusNotDone;
-    }
-    if (dateEl) {
-      dateEl.textContent = formatDisplayDate(dateKey);
-    }
+    if (btn) btn.textContent = drank ? texts.btnDrankUndo : texts.btnDrank;
+    if (status) status.textContent = drank ? texts.statusDone : texts.statusNotDone;
+    if (dateEl) dateEl.textContent = formatDisplayDate(dateKey);
+
     if (streakEl) {
       const streak = getStreak();
-      streakEl.textContent = streak > 0
-        ? (streak === 1 ? '1 day streak!' : streak + ' day streak!')
-        : '';
+      streakEl.textContent = streak > 0 ? `${streak} day streak!` : '';
     }
+
     if (lastTimeEl) {
       const timestamps = stored.drinkTimestamps || [];
-      if (timestamps.length > 0) {
-        const recent = timestamps.slice().sort(function (a, b) { return b.date.localeCompare(a.date); })[0];
-        const isToday = recent.date === dateKey;
-        lastTimeEl.textContent = isToday
-          ? `Last drank at: ${recent.time}`
-          : `Last drank: ${formatDisplayDate(recent.date)} at ${recent.time}`;
+      if (timestamps.length) {
+        const recent = timestamps[timestamps.length - 1];
+        lastTimeEl.textContent = `Last drank at: ${recent.time}`;
       } else {
         lastTimeEl.textContent = '';
       }
@@ -314,13 +314,49 @@
   function handleToggle() {
     const drank = toggleDrank();
     updateUI(drank);
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate(50);
+    navigator.vibrate?.(50);
+    if (drank) {
+      console.log('[App] drank=true, attempting notification');
+      console.log('[App] SW Controller:', navigator.serviceWorker.controller);
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'SHOW_DRINK_NOTIFICATION',
+          title: '🥤 Protein Tracked!',
+          body: 'Great job! You\'ve logged your protein drink today.'
+        });
+        console.log('[App] Message sent to SW');
+        showNotificationAlert('✅ Good Job.Keep Going..!');
+      } else {
+        console.log('[App] No SW controller available');
+        showNotificationAlert('⚠️ Service Worker not ready');
+      }
     }
   }
 
+  function showNotificationAlert(message) {
+    const alert = document.createElement('div');
+    alert.textContent = message;
+    alert.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #4CAF50;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      z-index: 9999;
+      font-weight: bold;
+      animation: slideIn 0.3s ease-out;
+    `;
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+      alert.style.animation = 'slideOut 0.3s ease-out';
+      setTimeout(() => alert.remove(), 300);
+    }, 3000);
+  }
+
   function init() {
-    // PROTEIN TRACKER INIT
     const drank = getCurrentDrank();
 
     const langSelect = document.getElementById('lang-select');
@@ -346,27 +382,21 @@
       });
     }
 
-    // THEME INIT
     const themeBtn = document.getElementById('theme-toggle');
-    if (themeBtn) {
-      themeBtn.addEventListener('click', toggleTheme);
-    }
+    if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
     setTheme(loadTheme());
 
-    // CLOCK INIT
     initLocation();
     initWorldClocks();
     updateClock();
     setInterval(updateClock, 1000);
 
-    // Periodic Date Check
     setInterval(function () {
-      const current = getCurrentDrank();
-      updateUI(current);
+      updateUI(getCurrentDrank());
     }, 60000);
 
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(function () { });
+      navigator.serviceWorker.register('sw.js').then(initReminder).catch(function () { });
     }
   }
 
