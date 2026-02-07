@@ -25,14 +25,24 @@
       btnDrank: "I drank my protein",
       btnDrankUndo: "Undo",
       statusDone: "Protein done for today.",
-      statusNotDone: "Not yet today."
+      statusNotDone: "Not yet today.",
+      statusStreak: "day streak!"
     },
     fr: {
       title: "Suivi de Protéines",
       btnDrank: "J'ai bu ma protéine",
-      btnDrankUndo: "Annuler",
+      btnDrankUndo: "Défaire",
       statusDone: "Protéine prise aujourd'hui.",
-      statusNotDone: "Pas encore aujourd'hui."
+      statusNotDone: "Pas encore aujourd'hui.",
+      statusStreak: "jour(s) consécutif(s)!"
+    },
+    nl: {
+      title: "Eiwitdrank Tracker",
+      btnDrank: "Ik heb mijn eiwit gedronken",
+      btnDrankUndo: "Ongedaan maken",
+      statusDone: "Eiwit voor vandaag gedronken.",
+      statusNotDone: "Nog niet vandaag.",
+      statusStreak: "dag(en) op rij!"
     }
   };
 
@@ -63,7 +73,7 @@
 
   function formatDisplayDate(dateKey) {
     const d = parseDateKey(dateKey);
-    return d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+    return d.toLocaleDateString(currentLang, { weekday: 'long', month: 'short', day: 'numeric' });
   }
 
   function loadState() {
@@ -297,7 +307,7 @@
 
     if (streakEl) {
       const streak = getStreak();
-      streakEl.textContent = streak > 0 ? `${streak} day streak!` : '';
+      streakEl.textContent = streak > 0 ? `${streak} ${texts.statusStreak}` : '';
     }
 
     if (lastTimeEl) {
