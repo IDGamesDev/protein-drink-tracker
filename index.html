@@ -33,11 +33,12 @@
     <p id="date-text" class="date-text" aria-live="polite"></p>
     <div class="header-right">
       <div class="language-picker" style="margin-right: 1rem;">
-        <select id="lang-select" aria-label="Select Language" style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 4px; cursor: pointer;">
-          <option value="en" style="background-color: #16213e; color: rgb(224, 210, 210);">🇺🇸 EN</option>
-          <option value="fr" style="background-color:  #16213e; color: rgb(229, 216, 216);">🇫🇷 FR</option>
-          <option value="nl" style="background-color: #16213e; color: rgb(212, 190, 190);">🇳🇱 NL</option>
-        </select>
+<select id="lang-select" aria-label="Select Language" style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 4px; cursor: pointer;">
+  <option value="en" style="background-color: #16213e; color: rgb(224, 210, 210);">🇺🇸 EN</option>
+  <option value="fr" style="background-color: #16213e; color: rgb(229, 216, 216);">🇫🇷 FR</option>
+  <option value="nl" style="background-color: #16213e; color: rgb(212, 190, 190);">🇳🇱 NL</option>
+  <option value="tr" style="background-color: #16213e; color: rgb(200, 180, 180);">🇹🇷 TR</option>
+</select>
       </div>
       <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Dark/Light Mode" title="Toggle Theme">
         🌙
@@ -46,7 +47,7 @@
   </header>
 
   <div class="main-content">
-    
+
     <div id="history-log" class="history-log" aria-label="7-day history log">
       <!-- Populated by JS -->
     </div>
@@ -58,12 +59,16 @@
       <img id="arm-weak" class="graphic-img" src="images/not-drank.png" alt="Protein not yet drank today" />
     </div>
 
+    <button onclick="window.location.href='protein-food.html'" class="secondary-btn">
+      List of Protein Food (Natural)
+    </button>
+
     <div class="status-area">
       <p id="status-text" class="status"></p>
       <p id="streak-text" class="streak-text" aria-live="polite"></p>
     </div>
 
-    
+
 
     <button type="button" id="toggle-btn" class="toggle-btn" aria-pressed="false">
       I drank my protein
