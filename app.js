@@ -45,6 +45,14 @@
       statusNotDone: "Nog niet vandaag.",
       statusStreak: "dag(en) op rij!"
     },
+    ar: {
+      title: "متعقب مشروب البروتين",
+      btnDrank: "شربت بروتيني",
+      btnDrankUndo: "تراجع",
+      statusDone: "تم شرب البروتين اليوم.",
+      statusNotDone: "لم يتم الشرب بعد اليوم.",
+      statusStreak: "يوم متتالي!"
+    },
     tr: {
       title: "Proteinli İçecek Takipçisi",
       btnDrank: "Proteinimi içtim",
