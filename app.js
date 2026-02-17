@@ -19,62 +19,6 @@
   /* --- Location Variables --- */
   let userLocation = { city: 'Local Time', timeZone: undefined };
 
-  // 1. translation dictionary
-  const translations = {
-    en: {
-      title: "Protein Drink Tracker",
-      btnDrank: "I drank my protein",
-      btnDrankUndo: "Undo",
-      statusDone: "Protein done for today.",
-      statusNotDone: "Not yet today.",
-      statusStreak: "day streak!"
-    },
-    fr: {
-      title: "Suivi de Protéines",
-      btnDrank: "J'ai bu ma protéine",
-      btnDrankUndo: "Défaire",
-      statusDone: "Protéine prise aujourd'hui.",
-      statusNotDone: "Pas encore aujourd'hui.",
-      statusStreak: "jour(s) consécutif(s)!"
-    },
-    nl: {
-      title: "Eiwitdrank Tracker",
-      btnDrank: "Ik heb mijn eiwit gedronken",
-      btnDrankUndo: "Ongedaan maken",
-      statusDone: "Eiwit voor vandaag gedronken.",
-      statusNotDone: "Nog niet vandaag.",
-      statusStreak: "dag(en) op rij!"
-    },
-    ar: {
-      title: "متعقب مشروب البروتين",
-      btnDrank: "شربت بروتيني",
-      btnDrankUndo: "تراجع",
-      statusDone: "تم شرب البروتين اليوم.",
-      statusNotDone: "لم يتم الشرب بعد اليوم.",
-      statusStreak: "يوم متتالي!"
-    },
-    tr: {
-      title: "Proteinli İçecek Takipçisi",
-      btnDrank: "Proteinimi içtim",
-      btnDrankUndo: "Geri al",
-      statusDone: "Bugünkü protein içildi.",
-      statusNotDone: "Bugün henüz protein içilmedi.",
-      statusStreak: "günlük seri!",
-    },
-  };
-
-  // 2. motivational quotes
-  const motivationalQuotes = [
-    "Stay strong! 💪",
-    "Consistency is key! 🔑",
-    "One sip at a time! 🥤",
-    "Fuel your body! ⚡",
-    "You're doing great! 🌟",
-    "Hydrate and thrive! 💧",
-    "Keep the streak alive! 🔥",
-    "Protein power! 🏋️‍♂️"
-  ];
-
   // Get preferred language (default: en)
   let currentLang = localStorage.getItem(LANG_KEY) || 'en';
 
@@ -264,9 +208,6 @@
           userLocation.city = await fetchCityName(latitude, longitude);
         const el = document.getElementById('main-clock-label');
         if (el) el.textContent = 'Time in ' + userLocation.city;
-      }, () => {
-        const el = document.getElementById('main-clock-label');
-        if (el) el.textContent = 'Local Time';
       });
     }
   }
@@ -329,20 +270,35 @@
     setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
   }
 
-  /* --- Motivational Quote Functions --- */
-  function getDailyQuote() {
+  /**
+   * --- Motivational Quote Functions ---
+   * @param {translations[currentLang]} texts The translations object for the current language, containing the motivationalQuotes array.
+   * @return {string} The final quote chosen for the day, based on a stored index or a new random one.
+   */
+  function getDailyQuote(texts) {
     const todayKey = getDateKey();
-    const storedQuoteKey = localStorage.getItem('proteinDailyQuote');
-    if (storedQuoteKey && storedQuoteKey.startsWith(todayKey)) {
-      const index = parseInt(storedQuoteKey.split('-')[1]);
-      return motivationalQuotes[index] || motivationalQuotes[0];
+    const storageKey = 'proteinDailyQuote';
+    const storedData = localStorage.getItem(storageKey);
+    
+    let index;
+
+    if (storedData && storedData.startsWith(todayKey)) {
+        index = parseInt(storedData.split('-')[1]);
+    } else {
+        index = Math.floor(Math.random() * texts.motivationalQuotes.length);
+        localStorage.setItem(storageKey, `${todayKey}-${index}`);
     }
-    const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
-    localStorage.setItem('proteinDailyQuote', `${todayKey}-${randomIndex}`);
-    return motivationalQuotes[randomIndex];
+
+    return texts.motivationalQuotes[index] || texts.motivationalQuotes[0];
   }
 
-  /* --- UI Functions --- */
+  /**
+   * --- UI Functions --- 
+   * Updates the entire UI based on the current drank state and language
+   * is called multiple times:
+   * - when language is changed
+   * DO NOT ADD ONE TIME CALLED FUNCTIONS HERE, they should be in init() or separate functions called from init()
+   */
   function updateUI(drank) {
     const dateKey = getDateKey();
     const stored = loadState();
@@ -354,13 +310,17 @@
     const dateEl = document.getElementById('date-text');
     const streakEl = document.getElementById('streak-text');
     const lastTimeEl = document.getElementById('last-time');
+    const mainClockLabel = document.getElementById('main-clock-label');
+    const proteinFoodListBtn = document.getElementById('protein-food-list-btn');
     const texts = translations[currentLang];
 
     if (title) title.textContent = texts.title;
+    if (proteinFoodListBtn) proteinFoodListBtn.textContent = texts.proteinFoodListBtn;
     if (flexed) flexed.classList.toggle('hidden', !drank);
     if (weak) weak.classList.toggle('hidden', drank);
     if (btn) btn.textContent = drank ? texts.btnDrankUndo : texts.btnDrank;
     if (status) status.textContent = drank ? texts.statusDone : texts.statusNotDone;
+    if (mainClockLabel) mainClockLabel.textContent = texts.localTime;
     if (dateEl) dateEl.textContent = formatDisplayDate(dateKey);
 
     if (streakEl) {
@@ -372,7 +332,7 @@
       const timestamps = stored.drinkTimestamps || [];
       if (timestamps.length) {
         const recent = timestamps[timestamps.length - 1];
-        lastTimeEl.textContent = `Last drank at: ${recent.time}`;
+        lastTimeEl.textContent = `${texts.lastDrankLabel} : ${recent.time}`;
       } else {
         lastTimeEl.textContent = '';
       }
@@ -381,7 +341,7 @@
 
     // Update motivational quote
     const quoteEl = document.getElementById('motivational-quote');
-    if (quoteEl) quoteEl.textContent = getDailyQuote();
+    if (quoteEl) quoteEl.textContent = getDailyQuote(texts);
   }
 
   function updateHistoryLog() {

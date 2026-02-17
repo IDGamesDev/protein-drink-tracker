@@ -6,9 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#1a1a2e">
   <title>Protein Drink Tracker</title>
+
   <link rel="icon" href="icons/icon2.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
   <link rel="manifest" href="manifest.json">
+
+  <script src="translations.js"></script>
+
   <script>
     (function () {
       const saved = localStorage.getItem('proteinTheme');
@@ -33,13 +37,13 @@
     <p id="date-text" class="date-text" aria-live="polite"></p>
     <div class="header-right">
       <div class="language-picker" style="margin-right: 1rem;">
-<select id="lang-select" aria-label="Select Language" style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 4px; cursor: pointer;">
-  <option value="en" style="background-color: #16213e; color: rgb(224, 210, 210);">🇺🇸 EN</option>
-  <option value="fr" style="background-color: #16213e; color: rgb(229, 216, 216);">🇫🇷 FR</option>
-  <option value="nl" style="background-color: #16213e; color: rgb(212, 190, 190);">🇳🇱 NL</option>
-  <option value="tr" style="background-color: #16213e; color: rgb(200, 180, 180);">🇹🇷 TR</option>
-  <option value="ar" style="background-color: #16213e; color: rgb(210, 190, 190);">🇸🇦 AR</option>
-</select>
+        <select id="lang-select" aria-label="Select Language" style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 4px; cursor: pointer;">
+          <option value="en" style="background-color: #16213e; color: rgb(224, 210, 210);">🇺🇸 EN</option>
+          <option value="fr" style="background-color: #16213e; color: rgb(229, 216, 216);">🇫🇷 FR</option>
+          <option value="nl" style="background-color: #16213e; color: rgb(212, 190, 190);">🇳🇱 NL</option>
+          <option value="tr" style="background-color: #16213e; color: rgb(200, 180, 180);">🇹🇷 TR</option>
+          <option value="ar" style="background-color: #16213e; color: rgb(210, 190, 190);">🇸🇦 AR</option>
+        </select>
       </div>
       <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Dark/Light Mode" title="Toggle Theme">
         🌙
@@ -60,7 +64,7 @@
       <img id="arm-weak" class="graphic-img" src="images/not-drank.png" alt="Protein not yet drank today" />
     </div>
 
-    <button onclick="window.location.href='protein-food.html'" class="secondary-btn">
+    <button id="protein-food-list-btn" onclick="window.location.href='protein-food.html'" class="secondary-btn">
       List of Protein Food (Natural)
     </button>
 
